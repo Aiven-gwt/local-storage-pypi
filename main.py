@@ -7,7 +7,7 @@ from starlette.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 
 from users.views import router as users_router
-from packages.views import router as packages_router
+from packages.views2 import router as packages_router
 
 
 @asynccontextmanager
@@ -30,13 +30,18 @@ app.add_middleware(
 
 
 @app.get("/")
-async def home(request: Request):
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "server_ip": os.getenv("SERVER_IP", "127.0.0.1"),
-        "server_port": os.getenv("SERVER_PORT", "8000"),
-    })
+async def home(
+    request: Request,
+):
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "server_ip": os.getenv("SERVER_IP", "127.0.0.1"),
+            "server_port": os.getenv("SERVER_PORT", "8000"),
+        },
+    )
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True)
+    uvicorn.run("main:app", reload=True, port=8000, host="0.0.0.0")

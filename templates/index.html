@@ -37,6 +37,14 @@
         <div id="package-list" class="border p-4 bg-white rounded shadow">
             <!-- Список пакетов будет загружен сюда -->
         </div>
+
+        <!-- Добавим блок для отображения уведомлений -->
+        <div id="notification" class="fixed bottom-4 right-4 hidden">
+            <div class="bg-red-500 text-white px-4 py-2 rounded shadow-lg">
+                <p id="notification-message"></p>
+                <ul id="missing-deps-list" class="list-disc pl-5 mt-2"></ul>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -160,6 +168,20 @@
         }
 
         // Загрузка пакетов
+        function showNotification(message, missingDeps = []) {
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notification-message');
+            const missingDepsList = document.getElementById('missing-deps-list');
+
+            notificationMessage.textContent = message;
+            missingDepsList.innerHTML = missingDeps.map(dep => `<li>${dep}</li>`).join('');
+
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 10000);
+        }
+
         async function uploadPackage() {
             const fileInput = document.getElementById('packageFile');
             const status = document.getElementById('uploadStatus');
@@ -182,7 +204,7 @@
                     method: 'POST',
                     body: formData,
                     headers: {
-                        'Authorization': authHeader, // Используем сохранённый заголовок авторизации
+                        'Authorization': authHeader,
                     },
                 });
 
@@ -191,7 +213,11 @@
                     loadPackageList(); // Обновляем список пакетов после загрузки
                 } else {
                     const data = await response.json();
-                    status.textContent = `Error: ${data.detail}`;
+                    if (data.missing_dependencies) {
+                        showNotification(data.message, data.missing_dependencies);
+                    } else {
+                        status.textContent = `Error: ${data.detail}`;
+                    }
                 }
             } catch (error) {
                 status.textContent = "Failed to upload package.";

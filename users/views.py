@@ -4,10 +4,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from core.models import db_helper, User
-from .helpers import get_user, create_user, verify_password, change_user_role, change_user_password, user_delete, \
-    get_all_users
-from .schemas import UserResponse, UserCreate, ChangeRoleRequest, ChangePasswordRequest, DeleteUserRequest, \
-    SafeUserResponse
+from .helpers import (
+    get_user,
+    create_user,
+    verify_password,
+    change_user_role,
+    change_user_password,
+    user_delete,
+    get_all_users,
+)
+from .schemas import (
+    UserResponse,
+    UserCreate,
+    ChangeRoleRequest,
+    ChangePasswordRequest,
+    DeleteUserRequest,
+    SafeUserResponse,
+)
 
 router = APIRouter(tags=["auth"])
 security = HTTPBasic()
@@ -15,10 +28,10 @@ security = HTTPBasic()
 
 # Проверка пользователя на роль admin
 async def get_current_admin(
-        credentials: HTTPBasicCredentials = Depends(security),
-        db: AsyncSession = Depends(
-            db_helper.scoped_session_dependency,
-        ),
+    credentials: HTTPBasicCredentials = Depends(security),
+    db: AsyncSession = Depends(
+        db_helper.scoped_session_dependency,
+    ),
 ):
     user = await get_user(db, credentials.username)
     if not user or not verify_password(credentials.password, user.password):
@@ -34,7 +47,7 @@ async def get_current_admin(
 
 @router.get("/users", response_model=list[SafeUserResponse])
 async def get_all_users_endpoint(
-        db: AsyncSession = Depends(db_helper.scoped_session_dependency)
+    db: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
     users = await get_all_users(db)
     return users
@@ -47,7 +60,8 @@ async def get_all_users_endpoint(
     status_code=status.HTTP_201_CREATED,
 )
 async def register(
-        user: UserCreate, db: AsyncSession = Depends(db_helper.scoped_session_dependency),
+    user: UserCreate,
+    db: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
     db_user = await get_user(db, user.username)
     if db_user:
@@ -57,11 +71,14 @@ async def register(
 
 
 # эндпоинт смены роли
-@router.put("/change-role", status_code=status.HTTP_200_OK, )
+@router.put(
+    "/change-role",
+    status_code=status.HTTP_200_OK,
+)
 async def change_role(
-        request: ChangeRoleRequest,
-        db: AsyncSession = Depends(db_helper.scoped_session_dependency),
-        current_user: User = Depends(get_current_admin),
+    request: ChangeRoleRequest,
+    db: AsyncSession = Depends(db_helper.scoped_session_dependency),
+    current_user: User = Depends(get_current_admin),
 ):
     if request.new_role not in ["admin", "user"]:
         raise HTTPException(
@@ -78,10 +95,13 @@ async def change_role(
 
 
 # эндпоинт авторизации
-@router.post("/login", status_code=status.HTTP_200_OK, )
+@router.post(
+    "/login",
+    status_code=status.HTTP_200_OK,
+)
 async def login(
-        credentials: HTTPBasicCredentials = Depends(security),
-        db: AsyncSession = Depends(db_helper.scoped_session_dependency),
+    credentials: HTTPBasicCredentials = Depends(security),
+    db: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
     user = await get_user(db, credentials.username)
     if not user or not verify_password(credentials.password, user.password):
@@ -94,11 +114,14 @@ async def login(
 
 
 # эндпоинт удаления пользователя
-@router.delete("/delete", status_code=status.HTTP_200_OK, )
+@router.delete(
+    "/delete",
+    status_code=status.HTTP_200_OK,
+)
 async def delete_user(
-        request: DeleteUserRequest,
-        db: AsyncSession = Depends(db_helper.scoped_session_dependency),
-        current_user: User = Depends(get_current_admin),
+    request: DeleteUserRequest,
+    db: AsyncSession = Depends(db_helper.scoped_session_dependency),
+    current_user: User = Depends(get_current_admin),
 ):
     deleted_user = await user_delete(db, request.username)
     if not deleted_user:
@@ -110,11 +133,13 @@ async def delete_user(
 # эндпоинт изменения пароля пользователя
 @router.put("/change-password")
 async def change_password(
-        request: ChangePasswordRequest,
-        db: AsyncSession = Depends(db_helper.scoped_session_dependency),
-        current_user: User = Depends(get_current_admin),
+    request: ChangePasswordRequest,
+    db: AsyncSession = Depends(db_helper.scoped_session_dependency),
+    current_user: User = Depends(get_current_admin),
 ):
-    updated_user = await change_user_password(db, request.username, request.new_password)
+    updated_user = await change_user_password(
+        db, request.username, request.new_password
+    )
     if not updated_user:
         raise HTTPException(status_code=404, detail="User not found")
 

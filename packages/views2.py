@@ -1,10 +1,11 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
+from fastapi import status
 from pathlib import Path
-import shutil
-
+import aiofiles
+import aiofiles.os as aio_os
 from core.models import User
-from packages.helpers import (
+from packages.helpers2 import (
     upload_package,
     list_packages,
     search_package,
@@ -22,10 +23,15 @@ async def upload_package_endpoint(
 ):
     """Загружает пакет в хранилище."""
     temp_path = Path(f"temp/{file.filename}")  # Сохраняем файл во временную директорию
+
     try:
-        # Сохраняем файл во временную директорию
-        with open(temp_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        # Создаём временную директорию, если её нет
+        await aio_os.makedirs("temp", exist_ok=True)
+
+        # Сохраняем файл во временную директорию асинхронно
+        async with aiofiles.open(temp_path, "wb") as buffer:
+            content = await file.read()
+            await buffer.write(content)
 
         # Пытаемся загрузить пакет в хранилище
         try:
@@ -33,18 +39,28 @@ async def upload_package_endpoint(
             return JSONResponse(
                 content={"message": f"Package {file.filename} uploaded and indexed!"},
             )
-        except Exception as e:
+        except HTTPException as e:
             # Ошибка при загрузке пакета в хранилище
+            if e.detail.get("missing_dependencies"):
+                return JSONResponse(
+                    status_code=e.status_code,
+                    content={
+                        "message": e.detail["message"],
+                        "missing_dependencies": e.detail["missing_dependencies"],
+                    },
+                )
+            raise e
+        except Exception as e:
             raise HTTPException(
                 status_code=500, detail=f"Failed to upload package: {e}"
             )
     except Exception as e:
         # Ошибка при сохранении файла во временную директорию
-        raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save file")
     finally:
         # Удаляем временный файл после завершения операции
-        if temp_path.exists():
-            temp_path.unlink()
+        if await aio_os.path.exists(temp_path):
+            await aio_os.remove(temp_path)
 
 
 @router.get("/list", response_model=list[str])

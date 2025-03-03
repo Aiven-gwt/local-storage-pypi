@@ -40,7 +40,9 @@ def verify_password(plain_password: str, hashed_password: str) -> True | False:
 
 
 # Функция для смены роли пользователя
-async def change_user_role(db: AsyncSession, username: str, new_role: str) -> User | None:
+async def change_user_role(
+    db: AsyncSession, username: str, new_role: str
+) -> User | None:
     db_user = await get_user(db, username)
     if not db_user:
         return None
@@ -61,7 +63,9 @@ async def user_delete(db: AsyncSession, username: str) -> User | None:
 
 
 # Функция для изменения пароля пользователя
-async def change_user_password(db: AsyncSession, username: str, new_password: str) -> User | None:
+async def change_user_password(
+    db: AsyncSession, username: str, new_password: str
+) -> User | None:
     db_user = await get_user(db, username)
     if not db_user:
         return None

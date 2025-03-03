@@ -32,11 +32,13 @@ import asyncssh
 #         raise Exception(f"Failed to copy file: {e.stderr}")
 
 
-"""ассинхронные"""
+"""асинхронные"""
 
 
 async def run_ssh_command(command: str):
-    async with asyncssh.connect(settings.SERVER_IP, username=settings.SERVER_USER) as conn:
+    async with asyncssh.connect(
+        settings.SERVER_IP, username=settings.SERVER_USER
+    ) as conn:
         result = await conn.run(command)
         if result.exit_status != 0:
             raise Exception(f"SSH command failed: {result.stderr}")
@@ -44,7 +46,9 @@ async def run_ssh_command(command: str):
 
 
 async def copy_file_to_linux(local_path: str, remote_path: str):
-    async with asyncssh.connect(settings.SERVER_IP, username=settings.SERVER_USER) as conn:
+    async with asyncssh.connect(
+        settings.SERVER_IP, username=settings.SERVER_USER
+    ) as conn:
         await asyncssh.scp(local_path, (conn, remote_path))
 
 
