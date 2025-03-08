@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, Request
+from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -20,6 +21,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(router=users_router, prefix="/user")
 app.include_router(router=packages_router, prefix="/packages")
 templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Разрешить все домены (для разработки)
@@ -44,4 +46,4 @@ async def home(
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True, port=8000, host="0.0.0.0")
+    uvicorn.run("main:app", reload=True, port=8000)
